@@ -1,0 +1,3 @@
+﻿rdflib
+pandas
+jupyter
