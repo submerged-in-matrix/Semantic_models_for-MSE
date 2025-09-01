@@ -1,0 +1,108 @@
+@prefix ex: <http://example.org/mse#> .
+@prefix rdf: <http://www.w3.org/1999/02/22-rdf-syntax-ns#> .
+@prefix rdfs: <http://www.w3.org/2000/01/rdf-schema#> .
+@prefix xsd: <http://www.w3.org/2001/XMLSchema#> .
+
+ex:CrystalStructure a rdfs:Class .
+
+ex:Material a rdfs:Class .
+
+ex:Property a rdfs:Class .
+
+ex:SynthesisMethod a rdfs:Class .
+
+ex:GaN ex:hasBandGap "3.4"^^xsd:float .
+
+ex:Gallium_Arsenide a ex:Material ;
+    rdfs:label "Gallium Arsenide" ;
+    ex:hasBandGap "1.42"^^xsd:float ;
+    ex:hasCrystalStructure ex:Zinc_blende ;
+    ex:hasLatticeConstant "5.653"^^xsd:float ;
+    ex:synthesizedBy ex:MBE .
+
+ex:Gallium_Nitride a ex:Material ;
+    rdfs:label "Gallium Nitride" ;
+    ex:hasBandGap "3.4"^^xsd:float ;
+    ex:hasCrystalStructure ex:Wurtzite ;
+    ex:hasLatticeConstant "3.189"^^xsd:float ;
+    ex:synthesizedBy ex:MOCVD .
+
+ex:Germanium a ex:Material ;
+    rdfs:label "Germanium" ;
+    ex:hasBandGap "0.66"^^xsd:float ;
+    ex:hasCrystalStructure ex:Diamond_cubic ;
+    ex:hasLatticeConstant "5.658"^^xsd:float ;
+    ex:synthesizedBy ex:Czochralski .
+
+ex:Indium_Phosphide a ex:Material ;
+    rdfs:label "Indium Phosphide" ;
+    ex:hasBandGap "1.34"^^xsd:float ;
+    ex:hasCrystalStructure ex:Zinc_blende ;
+    ex:hasLatticeConstant "5.869"^^xsd:float ;
+    ex:synthesizedBy ex:MOCVD .
+
+ex:Material_6 a ex:Material ;
+    rdfs:label "Material #6" ;
+    ex:hasCrystalStructure ex:CrystalStructure_6 ;
+    ex:synthesizedBy ex:SynthesisMethod_6 .
+
+ex:Silicon a ex:Material ;
+    rdfs:label "Silicon" ;
+    ex:hasBandGap "1.12"^^xsd:float ;
+    ex:hasCrystalStructure ex:Diamond_cubic ;
+    ex:hasLatticeConstant "5.431"^^xsd:float ;
+    ex:synthesizedBy ex:Czochralski .
+
+ex:Silicon_Carbide_4H a ex:Material ;
+    rdfs:label "Silicon Carbide (4H)" ;
+    ex:hasBandGap "3.26"^^xsd:float ;
+    ex:hasCrystalStructure ex:Hexagonal ;
+    ex:hasLatticeConstant "3.073"^^xsd:float ;
+    ex:synthesizedBy ex:PVT .
+
+ex:hasBandGap a rdf:Property ;
+    rdfs:domain ex:Material ;
+    rdfs:range xsd:float .
+
+ex:hasCrystalStructure a rdf:Property ;
+    rdfs:domain ex:Material ;
+    rdfs:range ex:CrystalStructure .
+
+ex:hasLatticeConstant a rdf:Property ;
+    rdfs:domain ex:Material ;
+    rdfs:range xsd:float .
+
+ex:synthesizedBy a rdf:Property ;
+    rdfs:domain ex:Material ;
+    rdfs:range ex:SynthesisMethod .
+
+ex:CrystalStructure_6 a ex:CrystalStructure ;
+    rdfs:label "CrystalStructure #6" .
+
+ex:Hexagonal a ex:CrystalStructure ;
+    rdfs:label "Hexagonal" .
+
+ex:MBE a ex:SynthesisMethod ;
+    rdfs:label "MBE" .
+
+ex:PVT a ex:SynthesisMethod ;
+    rdfs:label "PVT" .
+
+ex:SynthesisMethod_6 a ex:SynthesisMethod ;
+    rdfs:label "SynthesisMethod #6" .
+
+ex:Wurtzite a ex:CrystalStructure ;
+    rdfs:label "Wurtzite" .
+
+ex:Czochralski a ex:SynthesisMethod ;
+    rdfs:label "Czochralski" .
+
+ex:Diamond_cubic a ex:CrystalStructure ;
+    rdfs:label "Diamond cubic" .
+
+ex:MOCVD a ex:SynthesisMethod ;
+    rdfs:label "MOCVD" .
+
+ex:Zinc_blende a ex:CrystalStructure ;
+    rdfs:label "Zinc blende" .
+
