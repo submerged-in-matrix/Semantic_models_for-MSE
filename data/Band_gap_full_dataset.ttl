@@ -9,10 +9,6 @@ ex:Material a rdfs:Class .
 
 ex:Property a rdfs:Class .
 
-ex:SynthesisMethod a rdfs:Class .
-
-ex:GaN ex:hasBandGap "3.4"^^xsd:float .
-
 ex:hasBandGap a rdf:Property ;
     rdfs:domain ex:Material ;
     rdfs:range xsd:float .
@@ -21,11 +17,11 @@ ex:hasCrystalStructure a rdf:Property ;
     rdfs:domain ex:Material ;
     rdfs:range ex:CrystalStructure .
 
-ex:hasLatticeConstant a rdf:Property ;
+ex:hasExternalId a rdf:Property ;
     rdfs:domain ex:Material ;
-    rdfs:range xsd:float .
+    rdfs:range xsd:string .
 
-ex:synthesizedBy a rdf:Property ;
+ex:hasFormula a rdf:Property ;
     rdfs:domain ex:Material ;
-    rdfs:range ex:SynthesisMethod .
+    rdfs:range xsd:string .
 
