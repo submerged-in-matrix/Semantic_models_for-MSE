@@ -58,4 +58,3 @@ All code will live in: `notebooks/build_mini_mkg.ipynb`
 
 
 **Author**: Md. Saidul Islam  
-**Intent**: Demonstrate semantic modeling & ontology skills relevant to BAM (B8/2266).  
