@@ -2,9 +2,6 @@
 
 A short, beginner-friendly project to demonstrate **semantic modeling** skills that transfer directly to BAM’s role on ontologies and semantic interoperability.
 
-> Job context: Postdoctoral Research Associate – Development and Application of Ontologies and Semantic Models (BAM)  
-> Link (provided by user): https://www.bam.de/umantis/DE/2266.html
-
 ## 🎯 Goal
 Build a tiny, end-to-end pipeline that:
 1) defines a **small ontology** for a narrow materials sub-domain,  
@@ -13,7 +10,7 @@ Build a tiny, end-to-end pipeline that:
 4) converts outputs into **RDF triples** (Linked Data),  
 5) loads into a lightweight **triplestore** and runs a few **SPARQL** queries.
 
-This showcases: ontology design, semantic consistency, FAIR/linked data, and LLM support—core themes of the BAM role.
+ Target skill: ontology design, semantic consistency, FAIR/linked data, and LLM support—
 
 ## 🧭 Roadmap (minimal scope)
 - [ ] **Ontology**: start with 6–10 classes (e.g., `Material`, `SynthesisMethod`, `Property`, `Publication`) and 10–20 relations (e.g., `hasProperty`, `synthesizedBy`, `measuredIn`).
@@ -25,10 +22,10 @@ This showcases: ontology design, semantic consistency, FAIR/linked data, and LLM
 
 > Keep it tiny and clean. Depth over breadth.
 
-## 🛠️ Suggested Stack (flexible)
+## 🛠️  Stack (flexible)
 - **Python**: `rdflib` for RDF generation.  
 - **SPARQL**: `rdflib` SPARQL in-notebook or a local triplestore (e.g., GraphDB Free, QLever Docker, or Apache Jena/Fuseki).  
-- **LLM parsing**: placeholder functions; you can swap any provider/API later.  
+- **LLM parsing**: Chatgpt and OLLAMA tried. Ollama is used, chatgpt does not provide api access for a plus user as in my case.  
 - **Validation**: simple checks for semantic consistency (domain/range sanity).
 
 ## 📦 Minimal Setup
@@ -39,21 +36,17 @@ pip install rdflib pandas
 # (Optional for local store) GraphDB/Jena/QLever via Docker if desired
 ```
 
-## 🔍 Suggested Sub-domain Ideas
+## 🔍 Planned Sub-domain Ideas
 - MOFs 101 (very small set)  
 - Common semiconductors (Si, GaAs, perovskites)  
 - Alloys (Fe-based) with 2–3 properties (e.g., density, hardness, band gap if relevant)  
 
-Pick **one** and keep it tiny (5–10 materials total).
+
 
 ## 🧪 Notebook
-All code will live in: `notebooks/build_mini_mkg.ipynb` (currently empty; you will code inside).
+All code will live in: `notebooks/build_mini_mkg.ipynb` 
 
-## 🧩 How this maps to BAM requirements
-- **Ontology & semantic consistency** → define classes/relations, domain/range checks.  
-- **Semantic interoperability** → RDF + namespaces + SPARQL.  
-- **New technologies (LLMs)** → LLM-assisted entity/relation suggestion.  
-- **Documentation & training** → this README and clear, reproducible steps.  
+ 
 
 ## 📚 Useful References (for later reading)
 - MatVis (BAM-linked): https://github.com/Mat-O-Lab/MatVis  
@@ -63,21 +56,6 @@ All code will live in: `notebooks/build_mini_mkg.ipynb` (currently empty; you wi
 - KG-FM (framework materials KG): https://www.nature.com/articles/s41524-025-01540-6  
 - Semi-automated KG pipeline (2025): https://pubs.rsc.org/en/content/articlehtml/2025/dd/d4dd00362d
 
-> Keep the repo minimal now. We’ll structure `src/`, `data/`, `docs/` later if needed.
-
-## 🚀 Get Started (when ready)
-```bash
-# initialize repo (local)
-git init
-git add README.md notebooks/build_mini_mkg.ipynb
-git commit -m "init: mini MKG (LLM-assisted ontology)"
-# create a remote on GitHub first, then:
-git branch -M main
-git remote add origin <your_repo_url>
-git push -u origin main
-```
-
----
 
 **Author**: Md. Saidul Islam  
 **Intent**: Demonstrate semantic modeling & ontology skills relevant to BAM (B8/2266).  
