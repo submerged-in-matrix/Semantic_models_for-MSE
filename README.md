@@ -1,6 +1,6 @@
 # Mini Materials Knowledge Graph (LLM-assisted Ontology)
 
-A short, beginner-friendly project to demonstrate **semantic modeling** skills that transfer directly to BAM’s role on ontologies and semantic interoperability.
+A short, beginner-friendly project to dive into **semantic modeling** for materials KG.
 
 ## 🎯 Goal
 Build a tiny, end-to-end pipeline that:
