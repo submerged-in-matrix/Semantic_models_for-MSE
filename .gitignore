@@ -1,2 +1,58 @@
 
-.env
+##############################################
+# IGNORE LARGE FILES & DATA EXPORTS
+##############################################
+
+# Excel, CSV, Dataset files
+*.xlsx
+*.xls
+*.csv
+
+# Knowledge Graph outputs
+*.ttl
+*.nt
+*.nq
+*.owl
+*.rdf
+*.html
+*.gz
+*.rar
+*.zip
+
+# Any generated KG directories
+kg_full/
+mse_kg_full.ttl
+mse_kg_full.nt
+full_dataset_*
+semiconductors_small*
+*_featurized*
+*_featureized*
+
+##############################################
+# PYTHON / NOTEBOOK / ENV IGNORE
+##############################################
+
+# Virtual environments
+venv/
+.env/
+.env.bak/
+.vscode/
+__pycache__/
+*.pyc
+
+# Jupyter auto-generated files
+.ipynb_checkpoints/
+
+##############################################
+# OS / EDITOR / MISC
+##############################################
+
+# VS Code settings
+.vscode/
+
+# Windows
+Thumbs.db
+Desktop.ini
+
+# macOS
+.DS_Store
