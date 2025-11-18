@@ -31,3 +31,13 @@ ex:hasFormula a rdf:Property ;
     rdfs:domain ex:Material ;
     rdfs:range xsd:string .
 
+ex:ingestIndex a rdf:Property ;
+    rdfs:comment "Monotonic ingest sequence number for this material record." ;
+    rdfs:domain ex:Material ;
+    rdfs:range xsd:integer .
+
+ex:ingestTime a rdf:Property ;
+    rdfs:comment "Timestamp when this record was ingested into the KG (ISO 8601)." ;
+    rdfs:domain ex:Material ;
+    rdfs:range xsd:dateTime .
+
