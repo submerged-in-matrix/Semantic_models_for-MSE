@@ -13,14 +13,14 @@ Built a tiny, end-to-end pipeline that:
 
 
 ##  Stack 
-- **Python**: `rdflib` for RDF generation.  
-- **SPARQL**: `rdflib` SPARQL in-notebook or a local triplestore (e.g., GraphDB Free, QLever Docker, or Apache Jena/Fuseki).  
+- **Knowledge-graph**: `rdflib` for RDF generation, Regex for converting 'Straucture_Summary.tyt' to 'Pymatgen's Structure Object'
+- **SPARQL**: `rdflib` SPARQL   
 - **LLM parsing**: Chatgpt and OLLAMA tried. Ollama is used, chatgpt does not provide api access for a plus user as in my case.  
 - **Validation**: simple checks for semantic consistency (domain/range sanity).
 
 ##  Planned Sub-domain Ideas
 - MOFs
-- Common semiconductors  
+- Common semiconductors (used in this project)
 - Alloys
 
  
