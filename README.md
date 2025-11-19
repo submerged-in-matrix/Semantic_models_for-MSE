@@ -1,11 +1,11 @@
-# Mini Materials Knowledge Graph (LLM-assisted Ontology)
+# Mini Semiconductor Knowledge Graph (LLM-assisted Ontology)
 
-A short, beginner-friendly project to dive into **semantic modeling** for materials KG.
+A short project to dive into **semantic modeling** for materials KG.
 
 
 Built a tiny, end-to-end pipeline that:
-1) defines a **small ontology** for semiconductors data,  
-2) ingests a **tiny dataset** ,  
+1) defines a **small ontology** for semiconductors data connecting crystal _system, centrosymmetricity and respective band-gaps.
+2) ingests a **tiny dataset** (data source: Materials Project),  
 3) uses an **LLM (ollama)-assisted extractor from text files or random texts** to propose entities/relations,  
 4) converts outputs into **RDF triples** (Linked Data),  
 5) loads into a lightweight **triplestore** and runs a few **SPARQL** queries.
