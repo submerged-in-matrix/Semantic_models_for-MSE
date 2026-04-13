@@ -15,13 +15,13 @@
 
 ## The Problem
 
-Materials science is drowning in disconnected data. Band-gap values live in CSVs. Crystal structures live in CIF files. Composition metadata lives in API responses. Literature findings live in PDFs. Each source uses its own schema, its own naming conventions, its own units. There is no single place where you can ask: *"Give me all cubic, centrosymmetric materials with a band gap between 1.0 and 2.0 eV"* — and get a trustworthy, provenance-tracked answer that spans structured databases, featurized datasets, and unstructured text.
+Materials science is drowning in disconnected data. Band-gap values live in CSVs. Crystal structures live in CIF files. Composition metadata lives in API responses. Literature findings live in PDFs. Each source uses its own schema, its own naming conventions, its own units. Having a single, queryable source of truth — where one can ask *"Give me all cubic, centrosymmetric materials with a band gap between 1.0 and 2.0 eV"* and get a provenance-tracked answer spanning structured databases, featurized datasets, and unstructured text — is increasingly important for reproducibility and automation in data-driven materials research.
 
-**This project builds that single source of truth.**
+**This project is a working prototype of that idea.**
 
 ## What This Is
 
-A complete neuro-symbolic pipeline that combines a **hand-designed RDF ontology** with **LLM-assisted ingestion and querying** to create a queryable knowledge graph of semiconductor band-gap data. The system has two modes:
+A complete neuro-symbolic pipeline that combines a **hand-designed RDF ontology** with **LLM-assisted ingestion and querying** to create a queryable knowledge graph of semiconductor band-gap data. The graph can be queried directly via **SPARQL** or through **natural language** (LLM-translated to SPARQL). The system has two modes:
 
 ### Mode 1 — LLM-Assisted Ingestion (Primary)
 
@@ -55,7 +55,7 @@ The RDF schema connects materials to their measurable and structural properties 
                     └─── hasSource ────────→  xsd:string (provenance)
 ```
 
-This is deliberately minimal — the point is a clean, extensible foundation, not a monolithic ontology. Every triple carries provenance metadata so you can trace any fact back to its origin (Materials Project API, featurized CSV, LLM-extracted text, etc.).
+This is deliberately minimal — the point is a clean, extensible foundation, not a monolithic ontology. Every triple carries provenance metadata, making it possible to trace any fact back to its origin (Materials Project API, featurized CSV, LLM-extracted text, etc.).
 
 ## Pipeline Architecture
 
@@ -106,7 +106,7 @@ This is deliberately minimal — the point is a clean, extensible foundation, no
 
 **Why RDF and not a property graph (Neo4j)?** RDF triples are the native language of scientific linked data. They compose naturally with existing materials ontologies (MatOnto, EMMO, ChEBI), support federated SPARQL queries across institutions, and enforce schema constraints through domain/range validation. This is a bet on interoperability.
 
-**Why provenance as a first-class property?** Every triple tracks its source. When three different sources disagree on a band gap value, you need to know which came from DFT calculations, which from experiment, and which was LLM-extracted from a paper abstract. Without provenance, a KG is just a database with extra steps.
+**Why provenance as a first-class property?** Every triple tracks its source. When three different sources disagree on a band gap value, one needs to know which came from DFT calculations, which from experiment, and which was LLM-extracted from a paper abstract. Without provenance, a KG is just a database with extra steps.
 
 **Why guardrailed NL→SPARQL?** Raw LLM-generated SPARQL is unreliable. The pipeline validates generated queries against the ontology schema before execution — checking that properties exist, types match, and the query structure is semantically valid. Malformed queries are caught and re-prompted, not silently executed.
 
@@ -124,7 +124,7 @@ Semantic_models_for-MSE/
 │                        — Structure_Summary.txt → regex → Structure Object
 ├── query/             # SPARQL query engine with guardrails
 ├── data/              # Source datasets (Materials Project band-gap data)
-├── demos/             # Demo scripts & walkthroughs
+├── demos/             # ⭐ End-to-end demos — start here to see the KG in action
 ├── examples/          # Example queries and ingestion runs
 ├── notebooks/         # Jupyter notebooks for exploration
 ├── utils/             # Shared utilities
@@ -132,6 +132,10 @@ Semantic_models_for-MSE/
 ├── export             # KG export utilities
 └── README.md
 ```
+
+## See It In Action
+
+The [`demos/`](demos/) folder contains end-to-end walkthroughs showing everything the KG can do — structured ingestion, LLM-assisted triple extraction from raw text, SPARQL querying, and natural-language querying. Start there for a hands-on overview before diving into individual modules.
 
 ## Tech Stack
 
