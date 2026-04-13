@@ -102,7 +102,7 @@ This is deliberately minimal — the point is a clean, extensible foundation, no
 
 ## Key Design Decisions
 
-**Why a local 3B model?** Running Llama 3.2 (3B) via Ollama means no API costs, no data leaving the machine, and reproducible results. It's deliberately lightweight — proving that you don't need GPT-4 to build a functional NL→KG pipeline for a constrained domain.
+**Why a local 3B model?** Running Llama 3.2 (3B) via Ollama means no API costs, no data leaving the machine, and reproducible results. It's deliberately lightweight — proving that one don't need GPT-4 to build a functional NL→KG pipeline for a constrained domain.
 
 **Why RDF and not a property graph (Neo4j)?** RDF triples are the native language of scientific linked data. They compose naturally with existing materials ontologies (MatOnto, EMMO, ChEBI), support federated SPARQL queries across institutions, and enforce schema constraints through domain/range validation. This is a bet on interoperability.
 
