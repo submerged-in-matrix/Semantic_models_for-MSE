@@ -25,7 +25,7 @@ Built a tiny, end-to-end pipeline that:
 
  
 
-##  Useful References (for later reading)
+##  Useful References
 - MatVis (BAM-linked): https://github.com/Mat-O-Lab/MatVis  
 - Propnet (Materials KG/inference): https://github.com/materialsintelligence/propnet  
 - MatKG (materials KG from literature): https://www.nature.com/articles/s41597-024-03039-z and https://arxiv.org/abs/2210.17340  
