@@ -63,9 +63,9 @@ Desktop.ini
 export/
 
 # Fine-tuning artifacts (regeneratable / large)
-data/finetune/query_dataset.jsonl
-data/finetune/train_ds/
-data/finetune/eval_ds/
-data/finetune/outputs/
-data/finetune/query_lora_adapter/
+data/finetune/*.jsonl
+data/finetune/train_ds*/
+data/finetune/eval_ds*/
+data/finetune/outputs*/
+data/finetune/eval_results*.json
 unsloth_compiled_cache/

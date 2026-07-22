@@ -194,14 +194,13 @@ for phr in phr_centro_false:
     add(phr, sparql)
 
 # ---------------------------------------------------------------
-# F) Combined: crystal_system + centro + bandgap range (your own example)
+# F) Combined: crystal_system + centro + bandgap range
 # ---------------------------------------------------------------
 combos = [
-    ("cubic", True, 1, 2),
-    ("hexagonal", False, 0.5, 1.5),
-    ("monoclinic", True, 3, 4),
-    ("trigonal", False, 1, 3),
-    ("tetragonal", True, 2, 3.5),
+    (cs, centro, x, y)
+    for cs in CRYSTAL_SYSTEMS
+    for centro in [True, False]
+    for (x, y) in [(1, 2), (2, 3.5)]
 ]
 phr_combo = [
     "List me {cs} materials with bandgap {x}-{y}ev and are {centro_word}",

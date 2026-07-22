@@ -2,6 +2,7 @@ from unsloth import FastLanguageModel
 from unsloth.chat_templates import train_on_responses_only
 from datasets import load_from_disk
 from trl import SFTTrainer, SFTConfig
+import json
 
 model, tokenizer = FastLanguageModel.from_pretrained(
     model_name="unsloth/Llama-3.2-3B-Instruct",
@@ -65,6 +66,9 @@ trainer = train_on_responses_only(
 
 trainer_stats = trainer.train()
 print(trainer_stats)
+with open("training_log_query.json", "w") as f:
+    json.dump(trainer.state.log_history, f, indent=2)
+print("Saved training log to training_log_query.json")
 
 model.save_pretrained("query_lora_adapter")
 tokenizer.save_pretrained("query_lora_adapter")
