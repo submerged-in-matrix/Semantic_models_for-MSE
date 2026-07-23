@@ -69,3 +69,8 @@ data/finetune/eval_ds*/
 data/finetune/outputs*/
 data/finetune/eval_results*.json
 unsloth_compiled_cache/
+data/finetune/*.gguf
+data/finetune/*_merged/
+data/finetune/*_merged_merged/
+data/finetune/*.dat
+data/finetune/calib_*.txt
