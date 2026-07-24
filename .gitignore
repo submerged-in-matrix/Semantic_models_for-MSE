@@ -61,3 +61,35 @@ Desktop.ini
 
 # Local export dir (artifacts, figures, etc.)
 export/
+
+##############################################
+# MODEL ARTIFACTS & FINETUNE OUTPUTS
+##############################################
+
+# Entire finetune folder — GGUFs, adapters, imatrix, logs, eval outputs.
+# All regenerable from train_query_lora.py / train_parse_lora.py + the base model.
+data/finetune/
+!data/finetune/query_dataset.jsonl
+!data/finetune/parse_dataset.jsonl
+
+# Model file types, wherever they appear
+*.gguf
+*.safetensors
+*.bin
+*.pth
+
+# Training side-effect dirs some frameworks create
+wandb/
+runs/
+checkpoints/
+unsloth_compiled_cache/
+
+##############################################
+# PYTHON ENV (correct venv name)
+##############################################
+.venv/
+
+##############################################
+# MISC STUBS
+##############################################
+project_tree.txt

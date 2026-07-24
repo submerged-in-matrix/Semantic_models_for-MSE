@@ -1,5 +1,5 @@
 from env.modules import *
-from utils.sel_ollama import _available_ollama_models, OLLAMA_OPTIONS , OLLAMA_MODEL_CANDIDATES
+from utils.sel_ollama import _available_ollama_models, OLLAMA_OPTIONS, OLLAMA_MODEL_CANDIDATES, PARSE_MODEL
 from utils.llm_schema import *
 from llm.llm_def import _fetch_url_text, _MODEL, STRICT_SYSTEM, _to_bool, _fabricate_material_id, _extract_material_id_from_text
 
@@ -9,7 +9,7 @@ def normalize_row_with_ollama(input_obj: dict, model: str|None=None) -> RowOut:
     if isinstance(input_obj, str):
         input_obj = {"text": input_obj}
 
-    model = model or _MODEL
+    model = model or PARSE_MODEL
     source_url = input_obj.get("url")
     raw_text = _fetch_url_text(source_url) if source_url else str(input_obj.get("text",""))
     payload  = {"text": raw_text, "source_url": source_url} if source_url else input_obj
@@ -30,7 +30,7 @@ def normalize_row_with_ollama(input_obj: dict, model: str|None=None) -> RowOut:
             tried.add(model)
             # choose another available model
             avail = [m for m in _available_ollama_models() if m not in tried]
-            model = next((m for m in OLLAMA_MODEL_CANDIDATES if m in avail), None)
+            model = next((m for m in [PARSE_MODEL] if m in avail or f"{m}:latest" in avail), None)
             if not model:
                 raise RuntimeError("Ollama call failed and no viable model remains.") from e
             continue

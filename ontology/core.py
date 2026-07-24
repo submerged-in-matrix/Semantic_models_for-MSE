@@ -25,8 +25,10 @@ hasFormula        = EX.hasFormula           # -> formula (composition string)
 hasBandGap        = EX.hasBandGap           # -> band_gap (eV)
 hasCrystalSystem  = EX.hasCrystalSystem     # -> crystal_system (e.g., cubic, hexagonal)
 hasCentrosymmetric= EX.hasCentrosymmetric   # -> is_centrosymmetric (True/False)
+hasSourceId = EX.hasSourceId 
 
-for prop in [hasExternalId, hasFormula, hasBandGap, hasCrystalSystem, hasCentrosymmetric]:
+for prop in [hasExternalId, hasFormula, hasBandGap, hasCrystalSystem,
+             hasCentrosymmetric, hasSourceId]:
     g.add((prop, RDF.type, RDF.Property))
 
 # Domain/Range annotations
@@ -35,6 +37,7 @@ g.add((hasFormula,         RDFS.domain, Material)); g.add((hasFormula,         R
 g.add((hasBandGap,         RDFS.domain, Material)); g.add((hasBandGap,         RDFS.range, XSD.float))
 g.add((hasCrystalSystem,   RDFS.domain, Material)); g.add((hasCrystalSystem,   RDFS.range, XSD.string))
 g.add((hasCentrosymmetric, RDFS.domain, Material)); g.add((hasCentrosymmetric, RDFS.range, XSD.boolean))
+g.add((hasSourceId, RDFS.domain, Material)); g.add((hasSourceId, RDFS.range, XSD.string))
 
 print("Ontology initialized (structure via crystal_system + inversion center, plus composition & bandgap).")
 print("Triples so far:", len(g))

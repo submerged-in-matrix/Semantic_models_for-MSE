@@ -56,7 +56,9 @@ def parse_to_kg(input_obj: Any,
         if source_label is None:
             source_label = input_obj.get("source_label") or input_obj.get("title") or "text"
         if source_id is None:
-            source_id = input_obj.get("source_id") or input_obj.get("url") or _extract_material_id_from_text(str(input_obj.get("text","")))
+            source_id = (input_obj.get("source_id") or input_obj.get("url")
+                        or _extract_material_id_from_text(str(input_obj.get("text","")))
+                        or "anonymous_text")
 
     # Ingest (with diff-count)
     before = set(g)

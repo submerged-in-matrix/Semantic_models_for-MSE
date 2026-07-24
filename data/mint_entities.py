@@ -41,14 +41,10 @@ def mint_entity(label, cls: URIRef, fallback_prefix: str, idx: int):
     if label is None or (pd.isna(label) if hasattr(pd, "isna") else label is None) or str(label).strip() == "":
         safe = f"{fallback_prefix}_{idx}"
         iri  = EX[safe]
-        g.add((iri, RDF.type, cls))
-        g.add((iri, RDFS.label, Literal(f"{fallback_prefix} #{idx}")))
         return iri
     label_str = str(label)
     safe = _slugify(label_str)
     iri  = EX[safe]
-    g.add((iri, RDF.type, cls))
-    g.add((iri, RDFS.label, Literal(label_str)))
     return iri
 
 print("Data loaded. Rows:", len(df))

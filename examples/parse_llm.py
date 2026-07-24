@@ -6,7 +6,7 @@ texts = [
     "Ga8O3N5Cl7 band gap ~1.34 eV; non-centrosymmetric & hexagonal; materials_id: funny:002,",
     "Ga5O33N5Cl7 has band gap ≈ 3.3 eV; is non-centrosymmetric & cubic; materials_id: funny:003,",
 ] 
-df_summary = parse_many_to_kg(texts, start_idx=1_000_000, source_label="fabricated_demo")  
+df_summary = parse_many_to_kg(texts, start_idx=1_000_000, source_id="fabricated_demo")  
 df_summary = df_summary.iloc[:, 4:-1]
 df_summary.head()
 

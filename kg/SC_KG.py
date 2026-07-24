@@ -4,14 +4,16 @@ from llm.ingest_from_txt import ingest_normalized_row
 from llm.normalize import RowOut
 from ontology.core import g
 from utils.KG_dir import *
-from parse.parse_multi_exe import df
+from data.mint_entities import df
 
 def _get_str(x):
     return str(x).strip() if x is not None and str(x).strip() not in {"", "nan", "None"} else None
 
 # --- 1) Ingest whole DataFrame (no per-row prints) ---
+df_ingest = df.sample(n=5000, random_state=0) if len(df) > 5000 else df
+assert len(df_ingest) > 1000, f"Wrong df in scope: {len(df_ingest)} rows"
 ingested = 0
-for i, r in df.iterrows():
+for i, r in df_ingest.iterrows():
     nr = RowOut(
         material = _get_str(r.get("formula")) or _get_str(r.get("material_id")) or f"Material_{i}",
         formula  = _get_str(r.get("formula")),
@@ -19,8 +21,9 @@ for i, r in df.iterrows():
         crystal_system = _get_str(r.get("crystal_system")),
         is_centrosymmetric = (bool(r["is_centrosymmetric"]) if pd.notna(r.get("is_centrosymmetric")) else None),
         band_gap_eV = (float(r["band_gap_eV"]) if pd.notna(r.get("band_gap_eV")) else None),
+        source_id = "CSV_base"
     )
-    ingest_normalized_row(nr, idx=i)
+    ingest_normalized_row(nr, idx=i, source_id="CSV_base")
     ingested += 1
 
 # --- 3) Save lightweight interactive HTML view (limited edges for performance) ---
@@ -65,7 +68,7 @@ def save_html_subset(g, out_html:str, max_edges:int=5000, show_literals:bool=Fal
                         .replace("hasFormula","formula").replace("hasExternalId","material_id")
         net.add_edge(sid, oid, label=pred); edges+=1
     net.show(out_html)
-
+save_kg()
 HTML_PATH = OUT_DIR / "kg_full.html"
 save_html_subset(g, str(HTML_PATH), max_edges=5000, show_literals=False)
 

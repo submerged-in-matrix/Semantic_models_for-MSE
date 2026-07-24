@@ -5,8 +5,8 @@ problems = []
 
 # A) All Materials should have labels
 for s in g.subjects(RDF.type, EX.Material):
-    if not any(True for _ in g.objects(s, RDFS.label)):
-        problems.append(f"Material without label: {s}")
+    if not any(True for _ in g.objects(s, EX.hasSourceId)):
+        problems.append(f"Material without source_id: {s}")
 
 # B) Band gap must be numeric and non-negative
 for s, p, o in g.triples((None, EX.hasBandGap, None)):

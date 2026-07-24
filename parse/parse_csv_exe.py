@@ -28,14 +28,7 @@ def ingest_new_csv(csv_path: str, update_df: bool = False):
             band_gap_eV       = (float(r["band_gap_eV"]) if pd.notna(r.get("band_gap_eV")) else None),
         )
         # idempotent + dedup-aware
-        ingest_normalized_row(nr, idx=1_000_000 + i, source_label="csv_import", source_id=csv_path)
+        ingest_normalized_row(nr, idx=1_000_000 + i, source_id=f"CSV_external::{Path(csv_path).name}")
         added += 1
-
-    if update_df:
-        global df
-        # naive append; optional real dedupe
-        # df = pd.concat([df, new_df], ignore_index=True).drop_duplicates(subset=["material_id","formula"], keep="first")
-        df = pd.concat([df, new_df], ignore_index=True)
-
     print(f"Ingested {added} rows from {csv_path}. Triples now: {len(g)}")
     return added

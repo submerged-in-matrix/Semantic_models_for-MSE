@@ -1,8 +1,8 @@
 from env.modules import *
-from utils.sel_ollama import _pick_model
+from utils.sel_ollama import _pick_model, QUERY_MODEL
 from utils.llm_schema import allowed_crystal_systems
 
-_MODEL = _pick_model()
+_MODEL = QUERY_MODEL 
 print("Using Ollama model:", _MODEL)
 
 STRICT_SYSTEM = f"""

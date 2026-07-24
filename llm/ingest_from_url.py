@@ -11,8 +11,7 @@ def batch_ingest_urls(urls, start_idx: int = 1_000_000, text_preview_chars: int 
     for k, url in enumerate(urls, start=0):
         try:
             nr = normalize_row_with_ollama({"url": url})   # STRICT: may raise ValueError
-            m  = ingest_normalized_row(nr, idx=start_idx+k,
-                                       source_label="web_import", source_id=url)
+            m  = ingest_normalized_row(nr, idx=start_idx+k, source_id=url)
             # ingest_normalized_row now auto-tags metadata
             successes.append({
                 "url": url,

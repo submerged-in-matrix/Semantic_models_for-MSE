@@ -1,6 +1,50 @@
+"""
+sanitize_query.py — Clean and simplify model-generated SPARQL for the MSE Knowledge Graph.
+
+KEY CHANGE: actively STRIPS OPTIONAL blocks the KG no longer supports.
+The fine-tuned model still emits ?label / ?source_label / ingest* OPTIONALs because
+its training data (and NL2SPARQL_SYSTEM) told it to. We cannot retrain right now, so
+the symbolic layer enforces the contract instead.
+"""
+
 from env.modules import *
 from query.query_rules import *
-from llm.llm_def import _MODEL
+from utils.sel_ollama import QUERY_MODEL
+
+_CMP = r'(>=|<=|!=|>|<|=)'
+
+# Predicates removed from the KG — any pattern referencing these is deleted.
+_DROP_PREDICATES = [
+    'rdfs:label',
+    'ex:statedIn',
+    'ex:hasProvenanceId',
+    'ex:ingestTime',
+    'ex:ingestIndex',
+]
+
+
+def _fix_filter_parens(q: str) -> str:
+    """Repair mis-nested parens in model FILTER lines. No-op if already balanced."""
+    import re
+    out = []
+    for line in q.split("\n"):
+        if line.strip().upper().startswith("FILTER"):
+            diff = line.count("(") - line.count(")")
+            while diff < 0:
+                new = re.sub(r'\)\)\s*' + _CMP, r') \1', line, count=1)
+                if new == line:
+                    break
+                line, diff = new, diff + 1
+            if diff > 0:
+                line = line.rstrip() + ")" * diff
+            elif diff < 0:
+                for _ in range(-diff):
+                    i = line.rfind(")")
+                    if i != -1:
+                        line = line[:i] + line[i + 1:]
+        out.append(line)
+    return "\n".join(out)
+
 
 def sanitize_sparql(q: str) -> str:
     import re
@@ -9,113 +53,120 @@ def sanitize_sparql(q: str) -> str:
     if q.startswith("```"):
         q = q.strip("`").split("\n", 1)[1].strip()
 
-    PREFIX = SPARQL_PREFIX.strip() + "\n"
     if "PREFIX ex:" not in q:
-        q = PREFIX + q
+        q = SPARQL_PREFIX.strip() + "\n" + q
 
-    # --- Collect WHERE-ish lines & tail (ORDER/LIMIT)
-    lines = [ln.strip() for ln in q.splitlines() if ln.strip()]
-    where_lines, tail_order = [], []
-    for ln in lines:
+    # 1. Keep only WHERE-body lines; ORDER/LIMIT tail discarded (ask_kg owns those)
+    where_lines = []
+    for ln in (l.strip() for l in q.splitlines() if l.strip()):
         low = ln.lower()
-        if low.startswith(("prefix", "select")):
+        if low.startswith(("prefix", "select", "order by", "limit")):
             continue
-        if low.startswith(("order by", "limit")):
-            tail_order.append(ln)
-            continue
-        if low.startswith(("where {", "optional", "filter", "bind", "values", "}")) or "?m " in ln or " ex:" in ln or ln.startswith("?"):
+        if low.startswith(("where {", "optional", "filter", "bind", "values", "}")) \
+           or "?m " in ln or " ex:" in ln or ln.startswith("?"):
             where_lines.append(ln)
 
-    # --- Flatten WHERE body; remove stray braces; clean illegal patterns
     where_txt = "\n".join(where_lines)
     where_txt = where_txt.replace("WHERE {", "").replace("{", "").replace("}", "")
-    # kill FILTER(BIND(...)) and self-BIND patterns
-    where_txt = re.sub(r'FILTER\s*\(\s*BIND\s*\([^)]+\)[^)]*\)\s*\.?', '', where_txt, flags=re.IGNORECASE)
-    where_txt = re.sub(r'BIND\s*\(\s*[a-zA-Z0-9_:]+\s*\(\s*\?([A-Za-z_]\w*)\s*\)\s*AS\s*\?\1\s*\)\s*\.?', '', where_txt)
-    # fix centrosymmetry as string triple
-    where_txt = re.sub(
-        r'\?m\s+ex:hasCentrosymmetric\s+(?:"false"|\'false\'|false)\s*\.\s*',
-        '?m ex:hasCentrosymmetric ?centro .\n'
-        'FILTER( BOUND(?centro) && ((datatype(?centro)=xsd:boolean && ?centro=false) || lcase(str(?centro))="false") )\n',
-        where_txt, flags=re.IGNORECASE
-    )
-    # remove junk like ") AND ?m ex:hasBandGap ?bandgap)"
-    where_txt = re.sub(r'\)\s*AND\s*\?m\s+ex:hasBandGap\s+\?bandgap\)\s*', '', where_txt, flags=re.IGNORECASE)
 
-    # --- Anchor & binding policy (Bandgap KG)
+    # 2. Restore OPTIONAL braces stripped above
+    where_txt = re.sub(r'(?im)^[ \t]*OPTIONAL\s+(?!\{)(.+?)\s*\.?\s*$',
+                       r'OPTIONAL { \1 }', where_txt)
+
+    # 3. Repair model paren bugs
+    where_txt = _fix_filter_parens(where_txt)
+
+    # 4. STRIP unsupported patterns  <-- THE CRITICAL FIX
+    for pred in _DROP_PREDICATES:
+        # OPTIONAL blocks referencing a dropped predicate
+        where_txt = re.sub(
+            r'(?im)^[ \t]*OPTIONAL\s*\{[^}]*' + re.escape(pred) + r'[^}]*\}[ \t]*\.?[ \t]*$\n?',
+            '', where_txt)
+        # bare triples using a dropped predicate
+        where_txt = re.sub(
+            r'(?im)^[ \t]*\?\w+\s+' + re.escape(pred) + r'\s+\?\w+\s*\.?[ \t]*$\n?',
+            '', where_txt)
+
+    # 5. Remove known junk patterns
+    where_txt = re.sub(r'FILTER\s*\(\s*BIND\s*\([^)]+\)[^)]*\)\s*\.?', '',
+                       where_txt, flags=re.IGNORECASE)
+    where_txt = re.sub(r'BIND\s*\(\s*[a-zA-Z0-9_:]+\s*\(\s*\?([A-Za-z_]\w*)\s*\)\s*AS\s*\?\1\s*\)\s*\.?',
+                       '', where_txt)
+    where_txt = re.sub(r'\)\s*AND\s*\?m\s+ex:hasBandGap\s+\?bandgap\)\s*', '',
+                       where_txt, flags=re.IGNORECASE)
+
+    # 6. Centro literal triple -> variable + simple FILTER
+    for val in ("false", "true"):
+        where_txt = re.sub(
+            rf'\?m\s+ex:hasCentrosymmetric\s+(?:"{val}"|\'{val}\'|{val})\s*\.\s*',
+            f'?m ex:hasCentrosymmetric ?centro .\nFILTER(?centro = {val})\n',
+            where_txt, flags=re.IGNORECASE)
+
+    # 7. Simplify FILTERs: drop BOUND guards, xsd:float casts, lcase/str calls
+    where_txt = re.sub(
+        r'FILTER\s*\(\s*BOUND\s*\(\s*\?bandgap\s*\)\s*&&\s*xsd:float\s*\(\s*\?bandgap\s*\)\s*'
+        r'(>=?|<=?)\s*([0-9.]+)\s*&&\s*xsd:float\s*\(\s*\?bandgap\s*\)\s*(>=?|<=?)\s*([0-9.]+)\s*\)',
+        r'FILTER(?bandgap \1 \2 && ?bandgap \3 \4)', where_txt, flags=re.IGNORECASE)
+    where_txt = re.sub(
+        r'FILTER\s*\(\s*BOUND\s*\(\s*\?bandgap\s*\)\s*&&\s*xsd:float\s*\(\s*\?bandgap\s*\)\s*'
+        r'(>=?|<=?|!=|=)\s*([0-9.]+)\s*\)',
+        r'FILTER(?bandgap \1 \2)', where_txt, flags=re.IGNORECASE)
+    where_txt = re.sub(r'xsd:float\s*\(\s*\?bandgap\s*\)', '?bandgap',
+                       where_txt, flags=re.IGNORECASE)
+    where_txt = re.sub(r'lcase\s*\(\s*str\s*\(\s*\?crystal_system\s*\)\s*\)', '?crystal_system',
+                       where_txt, flags=re.IGNORECASE)
+    where_txt = re.sub(r'FILTER\s*\(\s*BOUND\s*\(\s*\?centro\s*\)\s*&&\s*\(\(.*?\)\)\s*\)',
+                       'FILTER(?centro = false)', where_txt,
+                       flags=re.IGNORECASE | re.DOTALL)
+
+    # 8. Anchor to Material
     if " a ex:material" not in where_txt.lower():
         where_txt = "?m a ex:Material .\n" + where_txt
 
+    # 9. Dedup identical lines, drop blanks
+    seen, deduped = set(), []
+    for line in where_txt.split("\n"):
+        s = line.strip()
+        if not s or s in seen:
+            continue
+        seen.add(s)
+        deduped.append(s)
+    where_txt = "\n".join(deduped)
+
+    # 10. All five properties are mandatory now -> zero OPTIONALs in the final query
     def ensure_required(txt: str, pattern: str, var: str) -> str:
         req = f"?m ex:{pattern} ?{var} ."
-        txt = re.sub(rf"OPTIONAL\s*\{{\s*\?m\s+ex:{pattern}\s+\?{var}\s*\}}\s*", "", txt, flags=re.IGNORECASE)
+        txt = re.sub(rf"OPTIONAL\s*\{{\s*\?m\s+ex:{pattern}\s+\?{var}\s*\}}\s*", "",
+                     txt, flags=re.IGNORECASE)
         if req not in txt:
             txt = req + "\n" + txt
         return txt
 
-    def ensure_optional(txt: str, pattern: str, var: str) -> str:
-        req = f"?m ex:{pattern} ?{var} ."
-        if req in txt:
-            return txt
-        if f"ex:{pattern}".lower() not in txt.lower():
-            txt += f"\nOPTIONAL {{ ?m ex:{pattern} ?{var} }}"
-        return txt
+    for pat, var in [("hasFormula", "formula"),
+                     ("hasBandGap", "bandgap"),
+                     ("hasCrystalSystem", "crystal_system"),
+                     ("hasCentrosymmetric", "centro"),
+                     ("hasSourceId", "source_id")]:
+        where_txt = ensure_required(where_txt, pat, var)
 
-    wl = where_txt.lower()
-    uses_bg_filter   = ("bandgap" in wl) and ("filter" in wl)
-    uses_centro_flt  = ("centro" in wl) and ("filter" in wl)
-    uses_crys_flt    = ("crystal_system" in wl) and ("filter" in wl)
+    # 11. Assemble
+    head = SPARQL_PREFIX + "SELECT ?m ?formula ?bandgap ?crystal_system ?centro ?source_id\n"
+    return f"{head}WHERE {{\n  {where_txt.strip()}\n}}\n"
 
-    # ALWAYS required for Bandgap KG:
-    where_txt = ensure_required(where_txt, "hasFormula", "formula")
-    where_txt = ensure_required(where_txt, "hasBandGap", "bandgap")
-
-    # Conditional required/optional:
-    where_txt = ensure_required(where_txt, "hasCentrosymmetric", "centro") if uses_centro_flt else ensure_optional(where_txt, "hasCentrosymmetric", "centro")
-    where_txt = ensure_required(where_txt, "hasCrystalSystem", "crystal_system") if uses_crys_flt else ensure_optional(where_txt, "hasCrystalSystem", "crystal_system")
-
-    # Soft extras
-    if "rdfs:label" not in wl:
-        where_txt += "\nOPTIONAL { ?m rdfs:label ?label }"
-    if "ex:statedin" not in wl:
-        where_txt += "\nOPTIONAL { ?m ex:statedIn ?source }"
-        where_txt += "\nOPTIONAL { ?source rdfs:label ?source_label }"
-        where_txt += "\nOPTIONAL { ?source ex:hasProvenanceId ?source_id }"
-    if "ex:ingesttime" not in wl:
-        where_txt += "\nOPTIONAL { ?m ex:ingestTime ?ingest_time }"
-    if "ex:ingestindex" not in wl:
-        where_txt += "\nOPTIONAL { ?m ex:ingestIndex ?ingest_idx }"
-
-    # Robust guards
-    where_txt = where_txt.replace(
-        "FILTER(?centro = false)",
-        'FILTER( BOUND(?centro) && ((datatype(?centro)=xsd:boolean && ?centro=false) || lcase(str(?centro))="false") )'
-    )
-    where_txt = where_txt.replace(
-        "FILTER(xsd:float(?bandgap)", "FILTER( BOUND(?bandgap) && xsd:float(?bandgap)"
-    ).replace(
-        "FILTER(BOUND(xsd:float(?bandgap))", "FILTER( BOUND(?bandgap)"
-    )
-
-    head = SPARQL_PREFIX + "SELECT ?m ?label ?formula ?bandgap ?crystal_system ?centro ?source_label ?source_id\n"
-    q_clean = f"{head}WHERE {{\n  {where_txt.strip()}\n}}\n"
-    if tail_order:
-        q_clean += "\n".join(tail_order) + "\n"
-    return q_clean
 
 def nl_to_sparql(question: str, model=None):
-    model = model or _MODEL
+    model = model or QUERY_MODEL
     prompt = f"""{SPARQL_PREFIX}
 # Question:
 {question}
 # Write a valid SPARQL SELECT:"""
     resp = ollama.chat(
         model=model,
-        messages=[{"role":"system","content": NL2SPARQL_SYSTEM},
-                  {"role":"user","content": prompt}],
+        messages=[{"role": "system", "content": NL2SPARQL_SYSTEM},
+                  {"role": "user",   "content": prompt}],
         options={'temperature': 0, 'num_ctx': 1024}
     )
     q = resp['message']['content'].strip()
     if q.startswith("```"):
-        q = q.strip("`").split("\n",1)[1]
+        q = q.strip("`").split("\n", 1)[1]
     return sanitize_sparql(q)
