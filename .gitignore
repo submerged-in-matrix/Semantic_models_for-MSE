@@ -62,6 +62,7 @@ Desktop.ini
 # Local export dir (artifacts, figures, etc.)
 export/
 
+
 ##############################################
 # MODEL ARTIFACTS & FINETUNE OUTPUTS
 ##############################################
@@ -93,3 +94,17 @@ unsloth_compiled_cache/
 # MISC STUBS
 ##############################################
 project_tree.txt
+=======
+# Fine-tuning artifacts (regeneratable / large)
+data/finetune/*.jsonl
+data/finetune/train_ds*/
+data/finetune/eval_ds*/
+data/finetune/outputs*/
+data/finetune/eval_results*.json
+unsloth_compiled_cache/
+data/finetune/*.gguf
+data/finetune/*_merged/
+data/finetune/*_merged_merged/
+data/finetune/*.dat
+data/finetune/calib_*.txt
+
