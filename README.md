@@ -2,11 +2,11 @@
 
 # 🔬 Semantic Models for Materials Science & Engineering
 
-**A Neuro-Symbolic Pipeline: LLM-Wired Knowledge Graph for Semiconductor Band-Gap Data**
+**A Neuro-Symbolic Pipeline: Fine-Tuned LLM + RDF Knowledge Graph for Semiconductor Band-Gap Data**
 
 [![License: MIT](https://img.shields.io/badge/License-MIT-yellow.svg)](LICENSE)
 [![Python](https://img.shields.io/badge/Python-96.5%25-3776AB?logo=python&logoColor=white)](.)
-[![LLM](https://img.shields.io/badge/LLM-Llama_3.2_3B-orange)](.)
+[![LLM](https://img.shields.io/badge/LLM-Llama_3.2_3B_(LoRA)-orange)](.)
 [![RDF](https://img.shields.io/badge/Linked_Data-RDF%2FSPARQL-blue)](.)
 
 </div>
@@ -15,62 +15,83 @@
 
 ## The Problem
 
-Materials science is drowning in disconnected data. Band-gap values live in CSVs. Crystal structures live in CIF files. Composition metadata lives in API responses. Literature findings live in PDFs. Each source uses its own schema, its own naming conventions, its own units. Having a single, queryable source of truth — where one can ask *"Give me all cubic, centrosymmetric materials with a band gap between 1.0 and 2.0 eV"* and get a provenance-tracked answer spanning structured databases, featurized datasets, and unstructured text — is increasingly important for reproducibility and automation in data-driven materials research.
+Materials science data is fragmented. Band-gap values sit in CSVs, crystal structures in CIF files, composition metadata in API responses, and literature findings in PDFs — each with its own schema, naming conventions, and units. A single queryable source of truth, where one can ask *"Give me all cubic, centrosymmetric materials with a band gap between 1.0 and 2.0 eV"* and receive a provenance-tracked answer spanning structured databases and unstructured text, matters for reproducibility and automation in data-driven materials research.
 
-**This project is a working prototype of that idea.**
+This project is a working prototype of that idea.
 
-## What This Is
+## What This Does
 
-A complete neuro-symbolic pipeline that combines a **hand-designed RDF ontology** with **LLM-assisted ingestion and querying** to create a queryable knowledge graph of semiconductor band-gap data. The graph can be queried directly via **SPARQL** or through **natural language** (LLM-translated to SPARQL). The system has two modes:
+A neuro-symbolic pipeline combining a **hand-designed RDF ontology** with a **fine-tuned local LLM** (Llama 3.2 3B, LoRA) for ingestion and querying of semiconductor band-gap data. The knowledge graph currently holds **~150,000 materials** (~999k triples) sourced from Materials Project via `mp-api`, featurized with `matminer`.
 
-### Mode 1 — LLM-Assisted Ingestion (Primary)
+### Mode 1 — LLM-Assisted Ingestion
 
-Feed the system raw text — a URL, a PDF, a fabricated paragraph, a lab notebook snippet — and a local **Llama 3.2 (3B)** model extracts material entities and relationships, deduplicates them against the existing graph, normalizes types, and produces clean RDF triples ready for ingestion. No manual triple-writing required.
-
-```
-Raw Text / URL / PDF  →  LLM extraction  →  Deduplication & Sanitization  →  Typed RDF Triples  →  KG
-```
-
-### Mode 2 — Natural Language Querying (Secondary)
-
-Ask a question in plain English. The same LLM translates it into an executable **SPARQL** query, runs it against the triplestore, and returns structured results. Guardrails prevent malformed or semantically invalid queries from reaching the graph.
+Feed raw text — a URL, a paragraph, a lab notebook snippet — and the fine-tuned extraction model (`parse-lora`) pulls material entities, deduplicates against the existing graph, normalizes types, and produces clean RDF triples.
 
 ```
-"Which cubic materials have band gaps above 1.5 eV?"  →  LLM  →  SPARQL  →  Results
+Raw Text / URL  →  LLM extraction  →  Deduplication & Sanitization  →  Typed RDF Triples  →  KG
 ```
+
+> **Note:** PDF ingestion is not yet implemented despite appearing in earlier diagrams. Only plain text and URL (HTML via `requests` + `BeautifulSoup`) are currently supported.
+
+### Mode 2 — Natural Language Querying
+
+Ask a question in plain English. The fine-tuned query model (`query-lora`) translates it into SPARQL, a deterministic sanitizer validates and repairs the output, and the query runs against the in-memory triplestore.
+
+```
+"Which cubic materials have band gaps above 1.5 eV?"  →  query-lora  →  sanitize_sparql  →  rdflib  →  Results
+```
+
+### Live API
+
+Both modes are served via a FastAPI endpoint. When the author's machine is online, the API is reachable at:
+
+- **Interactive docs:** [`https://azog.tail598041.ts.net/docs`](https://azog.tail598041.ts.net/docs)
+- **NL query:** `POST /ask` — takes ~2 min on CPU (no GPU)
+- **Formula lookup:** `GET /material?formula=GaAs` — instant, no LLM involved
+
+For a scheduled demo: **sayeed.shahriar@gmail.com**
 
 ## The Ontology
-
-The RDF schema connects materials to their measurable and structural properties through five core relationships:
 
 ```
                     ┌─── hasBandGap ──────→  xsd:float (eV)
                     │
                     ├─── hasCrystalSystem ─→  xsd:string
                     │
-    mse:Material ───┼─── hasCentrosymmetry → xsd:boolean
+    mse:Material ───┼─── hasCentrosymmetric → xsd:boolean
                     │
-                    ├─── hasComposition ───→  xsd:string
+                    ├─── hasFormula ───────→  xsd:string
                     │
-                    └─── hasSource ────────→  xsd:string (provenance)
+                    └─── hasSourceId ──────→  xsd:string (provenance)
 ```
 
-This is deliberately minimal — the point is a clean, extensible foundation, not a monolithic ontology. Every triple carries provenance metadata, making it possible to trace any fact back to its origin (Materials Project API, featurized CSV, LLM-extracted text, etc.).
+Deliberately minimal — a clean, extensible foundation. Every triple carries provenance metadata tracing facts back to their origin (Materials Project API, featurized CSV, or LLM-extracted text).
 
-## Pipeline Architecture
+## Fine-Tuning
+
+Both LLM capabilities were fine-tuned via LoRA on `unsloth/Llama-3.2-3B-Instruct` (4-bit QLoRA, r=16, `train_on_responses_only` loss masking). Training data was built from verified templates, not generated by another LLM — SPARQL correctness is checkable, so ground truth came from the templates directly.
+
+| Adapter | Task | Training examples | Final loss | Eval |
+|---|---|---|---|---|
+| `query-lora` | NL → SPARQL | 122 (expanded to 206 after fix) | 0.075 | 13/13 parse-valid |
+| `parse-lora` | Text → JSON extraction | 76 (expanded to 148 after fix) | — | 21/21 valid JSON, 11/11 rejections correct |
+
+Both runs required one iteration to fix data-thinness failures — underrepresented subcategories were the root cause in each case, not model capacity. Details in [`data/finetune/`](data/finetune/).
+
+## Architecture
 
 ```
 ┌──────────────────────────────────────────────────────────────┐
 │                        DATA SOURCES                          │
-│  Materials Project API  ·  CSVs  ·  PDFs  ·  Raw text/URLs  │
-└──────────────┬───────────────────────────────┬───────────────┘
-               │                               │
-               ▼                               ▼
+│  Materials Project API  ·  CSVs  ·  Raw text/URLs            │
+└──────────────┬───────────────────────────────────────────────┘
+               │
+               ▼
     ┌─────────────────────┐        ┌───────────────────────┐
     │   Structured Ingest │        │   LLM-Assisted Ingest │
     │   (parse/)          │        │   (llm/ + parse/)     │
     │                     │        │                       │
-    │  CSV → Pymatgen     │        │  NL text → Llama 3.2  │
+    │  CSV → Pymatgen     │        │  NL text → parse-lora │
     │  Structure Object   │        │  → entity extraction   │
     │  → typed RDF        │        │  → dedup & sanitize    │
     │  triples            │        │  → typed RDF triples   │
@@ -82,71 +103,80 @@ This is deliberately minimal — the point is a clean, extensible foundation, no
               │   RDF Knowledge Graph │
               │   (kg/)               │
               │                       │
-              │   rdflib triplestore  │
-              │   + provenance meta   │
-              │   + domain/range      │
-              │     validation        │
+              │   rdflib · ~999k      │
+              │   triples · ~150k     │
+              │   materials           │
+              │   + provenance        │
               └───────────┬───────────┘
                           │
-                          ▼
+                ┌─────────┴──────────┐
+                ▼                    ▼
+    ┌────────────────────┐  ┌────────────────────┐
+    │  NL Query          │  │  Direct Lookup     │
+    │  (query/)          │  │  (query/)          │
+    │                    │  │                    │
+    │  NL → query-lora   │  │  formula → rdflib  │
+    │  → sanitize_sparql │  │  index lookup      │
+    │  → rdflib execute  │  │  (~0.05 ms)        │
+    └────────────────────┘  └────────────────────┘
+                │                    │
+                └────────┬───────────┘
+                         ▼
               ┌───────────────────────┐
-              │   Query Interface     │
-              │   (query/)            │
-              │                       │
-              │   NL → SPARQL (LLM)   │
-              │   + guardrails        │
-              │   + typed row         │
-              │     normalization     │
+              │  FastAPI + Tailscale  │
+              │  /ask    /material    │
+              │  /docs (Swagger UI)   │
               └───────────────────────┘
 ```
 
 ## Key Design Decisions
 
-**Why a local 3B model?** Running Llama 3.2 (3B) via Ollama means no API costs, no data leaving the machine, and reproducible results. It's deliberately lightweight — proving that one don't need GPT-4 to build a functional NL→KG pipeline for a constrained domain.
+**Local 3B model, not GPT-4.** Llama 3.2 (3B) via Ollama — no API costs, no data leaving the machine, reproducible results. Fine-tuning a small model on domain-specific templates proved sufficient for a constrained ontology.
 
-**Why RDF and not a property graph (Neo4j)?** RDF triples are the native language of scientific linked data. They compose naturally with existing materials ontologies (MatOnto, EMMO, ChEBI), support federated SPARQL queries across institutions, and enforce schema constraints through domain/range validation. This is a bet on interoperability.
+**RDF, not Neo4j.** RDF triples compose with existing materials ontologies (MatOnto, EMMO, ChEBI), support federated SPARQL across institutions, and enforce schema constraints via domain/range validation.
 
-**Why provenance as a first-class property?** Every triple tracks its source. When three different sources disagree on a band gap value, one needs to know which came from DFT calculations, which from experiment, and which was LLM-extracted from a paper abstract. Without provenance, a KG is just a database with extra steps.
+**Provenance as a first-class property.** When three sources disagree on a band gap value, the graph records which came from DFT calculations, which from experiment, and which from LLM-extracted text.
 
-**Why guardrailed NL→SPARQL?** Raw LLM-generated SPARQL is unreliable. The pipeline validates generated queries against the ontology schema before execution — checking that properties exist, types match, and the query structure is semantically valid. Malformed queries are caught and re-prompted, not silently executed.
+**Deterministic sanitizer over raw LLM output.** The fine-tuned model proposes SPARQL; a rule-based sanitizer (`sanitize_sparql`) validates, repairs parentheses, strips deprecated predicates, and enforces the ontology schema before execution. Known failure modes (e.g., mis-nested parentheses in combined filters) are deterministically corrected — the model's imperfections are understood and mitigated, not hidden.
 
 ## Repository Structure
 
 ```
 Semantic_models_for-MSE/
-├── ontology/          # RDF schema definition — the backbone
-├── kg/                # Knowledge graph construction & triplestore management
-├── llm/               # LLM integration (Ollama / Llama 3.2:3b)
-│                        — NL→triples extraction
-│                        — NL→SPARQL translation
-├── parse/             # Data parsers
-│                        — CSV → Pymatgen Structure → RDF
-│                        — Structure_Summary.txt → regex → Structure Object
-├── query/             # SPARQL query engine with guardrails
-├── data/              # Source datasets (Materials Project band-gap data)
-├── demos/             # ⭐ End-to-end demos — start here to see the KG in action
+├── ontology/          # RDF schema definition
+├── kg/                # KG construction & serialization
+├── llm/               # LLM integration — extraction + NL→SPARQL
+├── parse/             # CSV → Pymatgen → RDF; text parsing
+├── query/             # SPARQL execution, formula lookup, guardrails
+├── data/              # Source data + fine-tuning artifacts
+│   └── finetune/      # LoRA adapters, training scripts, eval logs
+├── demos/             # End-to-end demos — start here
 ├── examples/          # Example queries and ingestion runs
-├── notebooks/         # Jupyter notebooks for exploration
-├── utils/             # Shared utilities
-├── env/               # Environment configuration
-├── export             # KG export utilities
-└── README.md
+├── notebooks/         # Jupyter notebooks
+├── utils/             # Sanitizer, KG audit, provenance tools
+├── env/               # Environment config
+├── export/            # KG export utilities
+└── api_server.py      # FastAPI wrapper (POST /ask, GET /material)
 ```
-
-## See It In Action
-
-The [`demos/`](demos/) folder contains end-to-end walkthroughs showing everything the KG can do — structured ingestion, LLM-assisted triple extraction from raw text, SPARQL querying, and natural-language querying. Start there for a hands-on overview before diving into individual modules.
 
 ## Tech Stack
 
 | Component | Technology |
 |---|---|
-| **Knowledge Graph** | `rdflib` — RDF triple generation, storage, SPARQL execution |
-| **LLM** | Llama 3.2 (3B) via Ollama (local, no API keys) |
-| **Parsing** | Regex + Pymatgen for crystal structure conversion |
-| **Validation** | Domain/range semantic consistency checks |
-| **Data Source** | Materials Project (via `mp-api`) |
-| **Visualization** | JavaScript (3.5% of codebase) |
+| **Knowledge Graph** | `rdflib` — RDF triples, SPARQL execution |
+| **LLM** | Llama 3.2 3B, LoRA fine-tuned, served via Ollama |
+| **Fine-tuning** | Unsloth + PEFT + TRL (QLoRA, 4-bit) |
+| **Quantization** | llama.cpp, imatrix-calibrated Q4_K_M |
+| **API** | FastAPI + Uvicorn, tunneled via Tailscale Funnel |
+| **Data source** | Materials Project (`mp-api`) + `matminer` featurization |
+| **Parsing** | Regex + Pymatgen for crystal structures |
+
+## Known Limitations
+
+- **PDF ingestion not implemented.** Only plain text and URL sources currently work.
+- **NL queries take ~2 min on CPU.** No GPU in the serving setup; inference runs on CPU only.
+- **The model understands "materials," not "semiconductors."** Training templates used "materials" consistently; synonyms like "semiconductor" may produce invalid SPARQL. Use "materials" in queries.
+- **API availability depends on the author's machine being online.** This is a personal project served from a local machine, not a production deployment.
 
 ## Planned Extensions
 
@@ -156,16 +186,14 @@ The [`demos/`](demos/) folder contains end-to-end walkthroughs showing everythin
 | Metal-Organic Frameworks (MOFs) | 🔜 Planned |
 | Alloys | 🔜 Planned |
 
-## Related Work & References
+## Related Work
 
-This project sits in a growing ecosystem of materials knowledge graphs and LLM-assisted scientific data tools:
-
-- **MatVis** (BAM) — [github.com/Mat-O-Lab/MatVis](https://github.com/Mat-O-Lab/MatVis)
-- **Propnet** — materials KG with property inference — [github.com/materialsintelligence/propnet](https://github.com/materialsintelligence/propnet)
-- **MatKG** — KG from materials literature — [Nature Scientific Data (2024)](https://www.nature.com/articles/s41597-024-03039-z) · [arXiv:2210.17340](https://arxiv.org/abs/2210.17340)
+- **MatKG** — KG from materials literature — [Nature Scientific Data (2024)](https://www.nature.com/articles/s41597-024-03039-z)
 - **MKG via LLMs** (2024) — [arXiv:2404.03080](https://arxiv.org/abs/2404.03080)
 - **KG-FM** — framework materials KG — [Nature Comp. Materials (2025)](https://www.nature.com/articles/s41524-025-01540-6)
 - **Semi-automated KG pipeline** (2025) — [RSC Digital Discovery](https://pubs.rsc.org/en/content/articlehtml/2025/dd/d4dd00362d)
+- **MatVis** (BAM) — [github.com/Mat-O-Lab/MatVis](https://github.com/Mat-O-Lab/MatVis)
+- **Propnet** — [github.com/materialsintelligence/propnet](https://github.com/materialsintelligence/propnet)
 
 ---
 
