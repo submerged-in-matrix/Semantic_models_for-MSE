@@ -21,17 +21,17 @@ This project is a working prototype of that idea.
 
 ## What This Does
 
-A neuro-symbolic pipeline combining a **hand-designed RDF ontology** with a **fine-tuned local LLM** (Llama 3.2 3B, LoRA) for ingestion and querying of semiconductor band-gap data. The knowledge graph currently holds **~150,000 materials** (~999k triples) sourced from Materials Project via `mp-api`, featurized with `matminer`.
+A neuro-symbolic pipeline combining a **hand-designed RDF ontology** with 2 **fine-tuned local LLMs** (Llama 3.2 3B, LoRA) for ingestion (parse_Lora) and querying (query_lora) of semiconductor band-gap data. The knowledge graph currently holds **~150,000 materials** (~999k triples) sourced from Materials Project via `mp-api`, featurized with `matminer`.
 
 ### Mode 1 — LLM-Assisted Ingestion
 
-Feed raw text — a URL, a paragraph, a lab notebook snippet — and the fine-tuned extraction model (`parse-lora`) pulls material entities, deduplicates against the existing graph, normalizes types, and produces clean RDF triples.
+Feed raw text — a URL, a paragraph from a pdf, or a random text — and the fine-tuned extraction model (`parse-lora`) pulls material entities, deduplicates against the existing graph, normalizes types, and produces clean RDF triples.
 
 ```
 Raw Text / URL  →  LLM extraction  →  Deduplication & Sanitization  →  Typed RDF Triples  →  KG
 ```
 
-> **Note:** PDF ingestion is not yet implemented despite appearing in earlier diagrams. Only plain text and URL (HTML via `requests` + `BeautifulSoup`) are currently supported.
+> **Note:** PDF/image file ingestion is not yet implemented . Only plain text and URL (HTML via `requests` + `BeautifulSoup`) are currently supported.
 
 ### Mode 2 — Natural Language Querying
 
@@ -43,11 +43,12 @@ Ask a question in plain English. The fine-tuned query model (`query-lora`) trans
 
 ### Live API
 
-Both modes are served via a FastAPI endpoint. When the author's machine is online, the API is reachable at:
+The query interface is served via FastAPI. My local machine is tunneled via Tailscale for inference of LLM.
 
-- **Interactive docs:** [`https://azog.tail598041.ts.net/docs`](https://azog.tail598041.ts.net/docs)
-- **NL query:** `POST /ask` — takes ~2 min on CPU (no GPU)
-- **Formula lookup:** `GET /material?formula=GaAs` — instant, no LLM involved
+- **NL query:** `POST /ask` — LLM-generated SPARQL, ~2 min on CPU
+- **Formula lookup:** `GET /material?formula=GaAs` — direct rdflib index lookup, no LLM, instant
+
+The extraction model (`parse-lora`) is not exposed — ingestion is restricted to the author and contributors.
 
 For a scheduled demo: **sayeed.shahriar@gmail.com**
 
@@ -173,8 +174,7 @@ Semantic_models_for-MSE/
 
 ## Known Limitations
 
-- **PDF ingestion not implemented.** Only plain text and URL sources currently work.
-- **NL queries take ~2 min on CPU.** No GPU in the serving setup; inference runs on CPU only.
+- **NL queries take ~2.5 min on CPU.** No GPU in the serving setup; inference runs on CPU only.
 - **The model understands "materials," not "semiconductors."** Training templates used "materials" consistently; synonyms like "semiconductor" may produce invalid SPARQL. Use "materials" in queries.
 - **API availability depends on the author's machine being online.** This is a personal project served from a local machine, not a production deployment.
 
