@@ -107,4 +107,6 @@ data/finetune/*_merged/
 data/finetune/*_merged_merged/
 data/finetune/*.dat
 data/finetune/calib_*.txt
-
+deploy/
+DEMO_RUNBOOK.md
+ api_server.py
