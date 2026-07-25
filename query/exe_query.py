@@ -6,8 +6,7 @@ Changes:
 - SELECT (not DISTINCT); each material appears once
 - Default sort ORDER BY ASC(?bandgap); sort_by="ingest" for recency
 - No core_optionals block (sanitizer owns the body)
-- show_material(): direct rdflib index lookup, ~126x faster than SPARQL for
-  single-material retrieval (benchmarked: 0.05 ms vs 6.3 ms)
+- show_material(): direct rdflib index lookup, no SPARQL, no LLM)
 """
 
 import time

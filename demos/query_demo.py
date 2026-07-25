@@ -13,4 +13,4 @@ t0 = time.perf_counter()
 g.parse(ROOT / "data" / "mse_kg_full.ttl", format="turtle")
 print(f"Triples: {len(g)}  (load {time.perf_counter()-t0:.1f}s)")
 
-print(ask_kg("Show materials with a cubic crystal system and a band gap between 1 eV and 2 eV", n=5))
+print(ask_kg("Show materials with a cubic crystal system and a band gap below 1 eV and a formula containing Ga and As.", n=5))

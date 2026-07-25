@@ -10,7 +10,9 @@ def _get_str(x):
     return str(x).strip() if x is not None and str(x).strip() not in {"", "nan", "None"} else None
 
 # --- 1) Ingest whole DataFrame (no per-row prints) ---
-df_ingest = df.sample(n=5000, random_state=0) if len(df) > 5000 else df
+
+#df_ingest = df.sample(n=5000, random_state=0) if len(df) > 5000 else df
+df_ingest = df
 assert len(df_ingest) > 1000, f"Wrong df in scope: {len(df_ingest)} rows"
 ingested = 0
 for i, r in df_ingest.iterrows():
