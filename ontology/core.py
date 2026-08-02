@@ -1,7 +1,7 @@
 # Ontology skeleton for: material_id, formula, band_gap, crystal_system, is_centrosymmetric
 # (structure captured via crystal system + inversion center only)
 
-from env.modules import *
+from rdflib import Graph, Namespace, RDF, RDFS, XSD
 
 g = Graph()
 
